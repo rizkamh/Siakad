@@ -40,6 +40,7 @@
             <th>Jurusan</th>
             <th width="280px">Action</th>
         </tr>
+        
     @foreach ($paginate as $mhs)
         <tr>
 
