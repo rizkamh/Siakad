@@ -24,13 +24,14 @@ class MahasiswaController extends Controller
                 ->orwhere('alamat', 'like', '%' . request('search') . '%')
                 ->orwhere('tanggal_lahir', 'like', '%' . request('search') . '%')
                 ->orwhere('jenis_kelamin', 'like', '%' . request('search') . '%')
-                ->orwhere('kelas', 'like', '%' . request('search') . '%')
-                ->orwhere('jurusan', 'like', '%' . request('search') . '%')->paginate(5);
+                ->orwhere('kelas_id', 'like', '%' . request('search') . '%')
+                ->orwhere('jurusan', 'like', '%' . request('search') . '%')->paginate(3);
             return view('mahasiswa.index', ['paginate' => $paginate]);
         } else {
             //fungsi eloquent menampilkan data menggunakan pagination
-            $mahasiswa = Mahasiswa::all(); // Mengambil semua isi tabel
-            $paginate = Mahasiswa::orderBy('id_mahasiswa', 'asc')->paginate(5);
+            // yang semula $mahasiswa = Mahasiswa::all();  diubah menjadi with yang menyatakan relasi
+            $mahasiswa = Mahasiswa::with('kelas')->get();
+            $paginate = Mahasiswa::orderBy('id_mahasiswa', 'asc')->paginate(3);
             return view('mahasiswa.index', ['mahasiswa' => $mahasiswa, 'paginate' => $paginate]);
         }
     }
@@ -70,6 +71,11 @@ class MahasiswaController extends Controller
         $mahasiswa = new Mahasiswa;
         $mahasiswa->nim = $request->get('Nim');
         $mahasiswa->nama = $request->get('Nama');
+        $mahasiswa->email = $request->get('Email');
+        $mahasiswa->alamat = $request->get('Alamat');
+        $mahasiswa->tanggal_lahir = $request->get('Tanggal_Lahir');
+        $mahasiswa->jenis_kelamin = $request->get('Jenis_Kelamin');
+        $mahasiswa->kelas_id = $request->get('Kelas');
         $mahasiswa->jurusan = $request->get('Jurusan');
         $mahasiswa->save();
 
@@ -109,9 +115,9 @@ class MahasiswaController extends Controller
     public function edit($nim)
     {
         //menampilkan detail data dengan menemukan berdasarkan Nim Mahasiswa untuk diedit
-            $Mahasiswa = Mahasiswa::with('kelas')->where('nim', $nim)->first();
+            $mahasiswa = Mahasiswa::with('kelas')->where('nim', $nim)->first();
             $kelas = Kelas::all(); //mendapatkan data dari tabel kelas
-            return view('mahasiswa.edit', compact('Mahasiswa','kelas'));
+            return view('mahasiswa.edit', compact('mahasiswa','kelas'));
     }
 
     /**
@@ -134,21 +140,28 @@ class MahasiswaController extends Controller
                 'Kelas' => 'required',
                 'Jurusan' => 'required',
             ]);
-        //fungsi eloquent untuk mengupdate data inputan kita
-        Mahasiswa::where('nim', $nim)
-            ->update([
-                'nim'=>$request->Nim,
-                'nama'=>$request->Nama,
-                'email' =>$request->Email,
-                'alamat' => $request->Alamat,
-                'tanggal_lahir' =>$request->Tanggal_Lahir,
-                'jenis_kelamin' =>$request->Jenis_Kelamin,
-                'kelas'=>$request->Kelas,
-                'jurusan'=>$request->Jurusan,
-            ]);
-        //jika data berhasil diupdate, akan kembali ke halaman utama
-        return redirect()->route('mahasiswa.index')
-            ->with('success', 'Mahasiswa Berhasil Diupdate');
+
+            $mahasiswa = Mahasiswa::with('kelas')->where('nim', $nim)->first();
+            $mahasiswa->nim = $request->get('Nim');
+            $mahasiswa->nama = $request->get('Nama');
+            $mahasiswa->email = $request->get('Email');
+            $mahasiswa->alamat = $request->get('Alamat');
+            $mahasiswa->tanggal_lahir = $request->get('Tanggal_Lahir');
+            $mahasiswa->jenis_kelamin = $request->get('Jenis_Kelamin');
+            $mahasiswa->kelas_id = $request->get('Kelas');
+            $mahasiswa->jurusan = $request->get('Jurusan');
+            $mahasiswa->save();
+
+            $kelas = new Kelas;
+            $kelas->id = $request->get('Kelas');
+
+            //fungsi eloquent untuk mengupdate data dengan relasi belongsTo  
+            $mahasiswa->kelas()->associate($kelas);
+            $mahasiswa->save();
+
+            //jika data berhasil diupdate, akan kembali ke halaman utama
+            return redirect()->route('mahasiswa.index')
+                ->with('success', 'Mahasiswa Berhasil Diupdate');
     }
 
     /**
