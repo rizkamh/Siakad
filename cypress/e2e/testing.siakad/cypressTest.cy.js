@@ -54,5 +54,5 @@ describe('User Dapat Membuka Halaman Mahasiswa', () => {
     cy.visit("http://127.0.0.1:8000/mahasiswa");
     //delete mahasiswa
     cy.get(':nth-child(10) > .btn-danger').click();
-});
+  });
 })
